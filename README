@@ -1,0 +1,12 @@
+This is a Munin plugin for Redis.
+
+It tries to extensively covers Redis INFO output, while keeping the
+dependencies low (currently, only needs awk and redis-cli).
+
+To install : just copy the redis shell script in /etc/munin/plugins/
+and restart munin-node.
+
+To monitor a remote server, rename the script (or create a symlink)
+accordingly, ie. :
+/etc/munin/plugins/redis_remoteserverip_remoteserverport .
+

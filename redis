@@ -17,14 +17,14 @@ else
 fi
 
 if [ "$1" = "autoconf" ]; then
-    redis-cli -h $ip -p $port info >/dev/null 2>&1 && echo yes && exit 0
+    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli -h $ip -p $port info | awk -F: '
+    redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ { 
         print "multigraph redis_changes_since_last_save";
@@ -172,7 +172,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli -h $ip -p $port info | awk -F: '
+redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";

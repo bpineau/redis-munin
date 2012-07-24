@@ -9,6 +9,13 @@ port=$(echo $0 | awk -F_ '{ print $3 }')
 [ -z "$ip" ] && ip=127.0.0.1
 [ -z "$port" ] && port=6379
 
+# add the ability to set a password in a respective config file
+if [ -z "$password" ]; then
+    passwd='' # no password was configured
+else
+    passwd="-a $password"
+fi
+
 if [ "$1" = "autoconf" ]; then
     redis-cli -h $ip -p $port info >/dev/null 2>&1 && echo yes && exit 0
     echo no

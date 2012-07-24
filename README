@@ -10,3 +10,12 @@ To monitor a remote server, rename the script (or create a symlink)
 accordingly, ie. :
 /etc/munin/plugins/redis_remoteserverip_remoteserverport .
 
+Passwords can be set in a config file ala /etc/munin/plugin-conf.d/redis:
+
+[redis]
+ env.password secret-password
+
+and/or
+
+[redis_remoteserverip_remoteserverport]
+ env.passwod another-secret-password

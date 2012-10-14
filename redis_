@@ -23,20 +23,21 @@ if [ "$1" = "autoconf" ]; then
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port} && exit 0
+    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port}
+    exit 0
 fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
     redis-cli -h $ip -p $port $passwd info | awk -F: '
 
-    /^changes_since_last_save:/ { 
+    /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";
         print "graph_title Redis changes since last save" ;
         print "graph_info Number of write operations since last SAVE or BGSAVE";
         print "graph_category redis";
         print "changes.label changes";
-    }; 
+    };
 
     /^keyspace_hits:/ {
         print "multigraph redis_commands";
@@ -155,7 +156,7 @@ if [ "$1" = "config" ]; then
         dbskeys[$1]    = where[2];
         dbsexpires[$1] = where[4];
     };
-    
+
     END {
         print "multigraph redis_dbs";
         print "graph_title Redis dbs";
@@ -181,22 +182,22 @@ redis-cli -h $ip -p $port $passwd info | awk -F: '
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";
         print "changes.value " $2 ;
-    }; 
+    };
 
     /^total_connections_received:/ {
         print "multigraph redis_total_connections";
         print "connections.value " $2 ;
-    }; 
+    };
 
     /^used_memory:/ {
         print "multigraph redis_memory";
         print "memory.value " $2 ;
-    }; 
+    };
 
     /^connected_clients:/ {
         print "multigraph redis_clients";
         print "clients.value " $2 ;
-    }; 
+    };
 
     /^mem_fragmentation_ratio:/ {
         print "multigraph redis_fragmentation";
@@ -221,19 +222,19 @@ redis-cli -h $ip -p $port $passwd info | awk -F: '
     /^blocked_clients:/ {
         print "multigraph redis_blocked_clients";
         print "blocked.value " $2 ;
-    }; 
+    };
 
     /^total_commands_processed:/ {
         commands=$2
-    }; 
+    };
 
     /^keyspace_hits:/ {
         hits=$2
-    }; 
+    };
 
     /^keyspace_misses:/ {
         misses=$2
-    }; 
+    };
 
     /^db/ {
         split($2, where, "=|,");

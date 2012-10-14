@@ -21,10 +21,10 @@ on non-defaults ports), create a symbolic link accordingly, ie. :
 
 Passwords can be set in a config file ala /etc/munin/plugin-conf.d/redis:
 
-[redis]
- env.password secret-password
+[redis_*]
+env.password secret-password
 
 and/or
 
 [redis_remoteserverip_remoteserverport]
- env.passwod another-secret-password
+env.passwod another-secret-password

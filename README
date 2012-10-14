@@ -6,7 +6,7 @@ dependencies low (currently, only needs awk and redis-cli).
 It can monitor several Redis instances, remotes or locals to the server.
 
 To install : just copy the redis_ script to your $MUNIN_LIBDIR
-(on Debian, that's /usr/share/munin/plugins/, on Debian).
+(on Debian, that's /usr/share/munin/plugins/).
 
 Then create a symbolic link like this:
 

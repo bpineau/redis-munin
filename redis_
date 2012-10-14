@@ -9,8 +9,15 @@ port=$(echo $0 | awk -F_ '{ print $3 }')
 [ -z "$ip" ] && ip=127.0.0.1
 [ -z "$port" ] && port=6379
 
+# add the ability to set a password in a respective config file
+if [ -z "$password" ]; then
+    passwd='' # no password was configured
+else
+    passwd="-a $password"
+fi
+
 if [ "$1" = "autoconf" ]; then
-    redis-cli -h $ip -p $port info >/dev/null 2>&1 && echo yes && exit 0
+    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
@@ -21,7 +28,7 @@ fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli -h $ip -p $port info | awk -F: '
+    redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ { 
         print "multigraph redis_changes_since_last_save";
@@ -169,7 +176,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli -h $ip -p $port info | awk -F: '
+redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";

@@ -1,7 +1,7 @@
 This is a Munin plugin for Redis.
 
 It tries to extensively cover Redis INFO output, while keeping the
-dependencies low (currently, only needs awk and redis-cli).
+dependencies low (currently, only needs awk, redis-cli and Munin 1.4+).
 
 It can monitor several Redis instances, remotes or locals to the server.
 

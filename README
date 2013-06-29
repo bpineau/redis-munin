@@ -1,4 +1,4 @@
-This is a Munin plugin for Redis.
+This is a Munin public domain plugin for Redis.
 
 It tries to extensively cover Redis INFO output, while keeping the
 dependencies low (currently, only needs awk, redis-cli and Munin 1.4+).

@@ -8,6 +8,7 @@
 
 ip=$(echo $0 | awk -F_ '{ print $2 }')
 port=$(echo $0 | awk -F_ '{ print $3 }')
+binpath=$(dirname `whereis redis-cli | awk '{print $2}'`)
 
 [ -z "$ip" ] && ip=127.0.0.1
 [ -z "$port" ] && port=6379
@@ -20,19 +21,19 @@ else
 fi
 
 if [ "$1" = "autoconf" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
+    $binpath/redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port}
+    $binpath/redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port}
     exit 0
 fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli -h $ip -p $port $passwd info | awk -F: '
+    $binpath/redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";
@@ -180,7 +181,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli -h $ip -p $port $passwd info | awk -F: '
+$binpath/redis-cli -h $ip -p $port $passwd info | awk -F: '
 
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save";

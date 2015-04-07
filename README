@@ -1,9 +1,10 @@
 This is a Munin public domain plugin for Redis.
 
 It tries to extensively cover Redis INFO output, while keeping the
-dependencies low (currently, only needs awk, redis-cli and Munin 1.4+).
+dependencies low (currently, only needs awk, tr, sed, redis-cli and Munin 1.4+).
 
-It can monitor several Redis instances, remotes or locals to the server.
+It can monitor several Redis instances, remotes or locals to the server
+(via network or socket connection).
 
 To install : just copy the redis_ script to your $MUNIN_LIBDIR
 (on Debian, that's /usr/share/munin/plugins/).
@@ -19,6 +20,20 @@ To monitor remote servers (or monitor local Redis instances listening
 on non-defaults ports), create a symbolic link accordingly, ie. :
 /etc/munin/plugins/redis_remoteserverip_remoteserverport
 
+To monitor local running socket-based redis setups, create a symbolic
+link like this:
+/etc/munin/plugins/redis_socket_socketpath_with_underscores_filename
+
+i.e. :
+
+  ln -s '/usr/share/munin/plugins/redis_' \
+          '/etc/munin/plugins/redis_socket_var_run_redis_redis.sock'
+
+It's important to use the word socket as second part after redis_, to signal
+the script to use a socket connection. The redis-cli command must have
+access to the socket.
+The script convert the naming after socket into a socket real path.
+
 Passwords can be set in a config file ala /etc/munin/plugin-conf.d/redis:
 
 [redis_*]
@@ -27,4 +42,9 @@ env.password secret-password
 and/or
 
 [redis_remoteserverip_remoteserverport]
-env.passwod another-secret-password
+env.password another-secret-password
+
+and/or
+
+[redis_socket_socketpath]
+env.password another-secret-password

@@ -1,16 +1,35 @@
-#!/bin/sh
+#!/bin/bash
 #
 # The following code is released in public domain (where applicable).
 # http://creativecommons.org/publicdomain/zero/1.0/
-
 #%# family=auto
 #%# capabilities=autoconf suggest
 
-ip=$(echo $0 | awk -F_ '{ print $2 }')
-port=$(echo $0 | awk -F_ '{ print $3 }')
+ip_socket=$(echo $0 | awk -F_ '{ print $2 }')
+if [ $ip_socket = "socket" ]; then
+tmp_var=$(echo $0 | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')
+port_path=$(echo "/${tmp_var}" | sed 's,/$,,')
+else
+port_path=$(echo $0 | awk -F_ '{ print $3 }')
+fi
 
-[ -z "$ip" ] && ip=127.0.0.1
-[ -z "$port" ] && port=6379
+if [ "$ip_socket" = "socket" ]; then
+    ip_socket="-s";
+else
+    if [ -z $ip_socket ] ; then
+      ip_socket="-h 127.0.0.1"
+    else
+      ip_socket="-h $ip_socket"
+    fi
+fi
+
+if [ -z "$port_path" ]; then
+    port_path="-p 6379"
+elif [ "$ip_socket" = "-s" ]; then
+    port_path="$port_path"
+else
+    port_path="-p $port_path"
+fi
 
 # add the ability to set a password in a respective config file
 if [ -z "$password" ]; then
@@ -20,19 +39,25 @@ else
 fi
 
 if [ "$1" = "autoconf" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
+    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port}
+    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
     exit 0
+fi
+
+if [ "ip_socket" = "-s" ]; then
+    muninport=$(echo "$port_path" | tr '/' '_')
+else
+    muninport=$(echo "$port_path" | awk '{ print $2 }')
 fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli -h $ip -p $port $passwd info | awk -v port=${port} -F: '
+    redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
     /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;
@@ -180,7 +205,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli -h $ip -p $port $passwd info | awk -v port=${port} -F: '
+redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
    /^changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;

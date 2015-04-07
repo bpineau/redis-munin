@@ -49,7 +49,7 @@ if [ "$1" = "suggest" ]; then
     exit 0
 fi
 
-if [ "ip_socket" = "-s" ]; then
+if [ "$ip_socket" = "-s" ]; then
     muninport=$(echo "$port_path" | tr '/' '_')
 else
     muninport=$(echo "$port_path" | awk '{ print $2 }')

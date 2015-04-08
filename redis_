@@ -1,16 +1,35 @@
-#!/bin/sh
+#!/bin/bash
 #
 # The following code is released in public domain (where applicable).
 # http://creativecommons.org/publicdomain/zero/1.0/
-
 #%# family=auto
 #%# capabilities=autoconf suggest
 
-ip=$(echo $0 | awk -F_ '{ print $2 }')
-port=$(echo $0 | awk -F_ '{ print $3 }')
+ip_socket=$(echo $0 | awk -F_ '{ print $2 }')
+if [ $ip_socket = "socket" ]; then
+tmp_var=$(echo $0 | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')
+port_path=$(echo "/${tmp_var}" | sed 's,/$,,')
+else
+port_path=$(echo $0 | awk -F_ '{ print $3 }')
+fi
 
-[ -z "$ip" ] && ip=127.0.0.1
-[ -z "$port" ] && port=6379
+if [ "$ip_socket" = "socket" ]; then
+    ip_socket="-s";
+else
+    if [ -z $ip_socket ] ; then
+      ip_socket="-h 127.0.0.1"
+    else
+      ip_socket="-h $ip_socket"
+    fi
+fi
+
+if [ -z "$port_path" ]; then
+    port_path="-p 6379"
+elif [ "$ip_socket" = "-s" ]; then
+    port_path="$port_path"
+else
+    port_path="-p $port_path"
+fi
 
 # add the ability to set a password in a respective config file
 if [ -z "$password" ]; then
@@ -20,32 +39,39 @@ else
 fi
 
 if [ "$1" = "autoconf" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo yes && exit 0
+    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli -h $ip -p $port $passwd info >/dev/null 2>&1 && echo ${ip}_${port}
+    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
     exit 0
+fi
+
+if [ "$ip_socket" = "-s" ]; then
+    tmp_muninport=$(echo "$port_path" | tr '/' '_')
+    muninport=$(echo "${tmp_muninport:1}" | tr '.' '_')
+else
+    muninport=$(echo "$port_path" | awk '{ print $2 }')
 fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli -h $ip -p $port $passwd info | awk -F: '
+    redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
     /^changes_since_last_save:/ {
-        print "multigraph redis_changes_since_last_save";
-        print "graph_title Redis changes since last save" ;
+        print "multigraph redis_changes_since_last_save_"port;
+        print "graph_title Redis changes since last save Port: "port ;
         print "graph_info Number of write operations since last SAVE or BGSAVE";
         print "graph_category redis";
         print "changes.label changes";
     };
 
     /^keyspace_hits:/ {
-        print "multigraph redis_commands";
+        print "multigraph redis_commands_"port;
         print "graph_order commands hits misses";
-        print "graph_title Redis commands rate";
+        print "graph_title Redis commands rate Port: "port;
         print "graph_category redis";
         print "graph_vlabel commands/s";
         print "graph_info Redis commands per second";
@@ -61,8 +87,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^total_connections_received:/ {
-        print "multigraph redis_total_connections";
-        print "graph_title Redis connections rate";
+        print "multigraph redis_total_connections_"port;
+        print "graph_title Redis connections rate Port: "port;
         print "graph_category redis";
         print "graph_vlabel connections/s";
         print "graph_info Connections per second to the Redis server";
@@ -73,8 +99,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^used_memory:/ {
-        print "multigraph redis_memory";
-        print "graph_title Redis memory usage";
+        print "multigraph redis_memory_"port;
+        print "graph_title Redis memory usage "port;
         print "graph_category redis";
         print "graph_vlabel mem used";
         print "graph_info Memory allocated by Redis";
@@ -86,8 +112,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^connected_clients:/ {
-        print "multigraph redis_clients";
-        print "graph_title Redis connected clients";
+        print "multigraph redis_clients_"port;
+        print "graph_title Redis connected clients port: "port;
         print "graph_category redis";
         print "graph_vlabel clients";
         print "graph_info Number of currently connected clients";
@@ -97,8 +123,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^mem_fragmentation_ratio:/ {
-        print "multigraph redis_fragmentation";
-        print "graph_title Redis memory fragmentation";
+        print "multigraph redis_fragmentation_"port;
+        print "graph_title Redis memory fragmentation Port: "port;
         print "graph_category redis";
         print "graph_vlabel fragmentation ratio";
         print "graph_info Ratio between Redis RSS usage and allocated memory";
@@ -108,8 +134,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^expired_keys:/ {
-        print "multigraph redis_expired_keys";
-        print "graph_title Redis expired keys rate";
+        print "multigraph redis_expired_keys_"port;
+        print "graph_title Redis expired keys rate Port: "port;
         print "graph_category redis";
         print "graph_vlabel expired keys/s";
         print "graph_info Expired Redis keys per second";
@@ -120,8 +146,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^evicted_keys:/ {
-        print "multigraph redis_evicted_keys";
-        print "graph_title Redis evicted keys rate";
+        print "multigraph redis_evicted_keys_"port;
+        print "graph_title Redis evicted keys rate Port: "port;
         print "graph_category redis";
         print "graph_vlabel evicted keys/s";
         print "graph_info Evicted Redis keys per second";
@@ -132,8 +158,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^pubsub_channels:/ {
-        print "multigraph redis_pubsub_channels";
-        print "graph_title Redis pubsub channels";
+        print "multigraph redis_pubsub_channels_"port;
+        print "graph_title Redis pubsub channels Port: "port;
         print "graph_category redis";
         print "graph_vlabel channels";
         print "graph_info Number of pubsub channels";
@@ -143,8 +169,8 @@ if [ "$1" = "config" ]; then
     };
 
     /^blocked_clients:/ {
-        print "multigraph redis_blocked_clients";
-        print "graph_title Redis blocked clients";
+        print "multigraph redis_blocked_clients_"port;
+        print "graph_title Redis blocked clients Port: "port;
         print "graph_category redis";
         print "graph_vlabel clients";
         print "graph_info Number of blocked clients";
@@ -161,8 +187,8 @@ if [ "$1" = "config" ]; then
     };
 
     END {
-        print "multigraph redis_dbs";
-        print "graph_title Redis dbs";
+        print "multigraph redis_dbs_"port;
+        print "graph_title Redis dbs Port: "port;
         print "graph_category redis";
         print "graph_vlabel keys";
         print "graph_info Number of keys per dbs";
@@ -171,7 +197,7 @@ if [ "$1" = "config" ]; then
             print i "keys.label " i " keys"
             print i "keys.type GAUGE"
             print i "keys.min 0"
-            print i "expires.label " i " expired keys"
+            print i "expires.label " i " keys with TTL"
             print i "expires.type GAUGE"
             print i "expires.min 0";
     };
@@ -180,50 +206,50 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli -h $ip -p $port $passwd info | awk -F: '
+redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
-    /^changes_since_last_save:/ {
-        print "multigraph redis_changes_since_last_save";
+   /^changes_since_last_save:/ {
+        print "multigraph redis_changes_since_last_save_"port;
         print "changes.value " $2 ;
     };
 
     /^total_connections_received:/ {
-        print "multigraph redis_total_connections";
+        print "multigraph redis_total_connections_"port;
         print "connections.value " $2 ;
     };
 
     /^used_memory:/ {
-        print "multigraph redis_memory";
+        print "multigraph redis_memory_"port;
         print "memory.value " $2 ;
     };
 
     /^connected_clients:/ {
-        print "multigraph redis_clients";
+        print "multigraph redis_clients_"port;
         print "clients.value " $2 ;
     };
 
     /^mem_fragmentation_ratio:/ {
-        print "multigraph redis_fragmentation";
+        print "multigraph redis_fragmentation_"port;
         print "frag.value " $2 ;
     };
 
     /^expired_keys:/ {
-        print "multigraph redis_expired_keys";
+        print "multigraph redis_expired_keys_"port;
         print "expired.value " $2 ;
     };
 
     /^evicted_keys:/ {
-        print "multigraph redis_evicted_keys";
+        print "multigraph redis_evicted_keys_"port;
         print "evicted.value " $2 ;
     };
 
     /^pubsub_channels:/ {
-        print "multigraph redis_pubsub_channels";
+        print "multigraph redis_pubsub_channels_"port;
         print "channels.value " $2 ;
     };
 
     /^blocked_clients:/ {
-        print "multigraph redis_blocked_clients";
+        print "multigraph redis_blocked_clients_"port;
         print "blocked.value " $2 ;
     };
 
@@ -242,19 +268,18 @@ redis-cli -h $ip -p $port $passwd info | awk -F: '
     /^db/ {
         split($2, where, "=|,");
         dbskeys[$1]    = where[2];
-	dbsexpires[$1] = where[4];
+        dbsexpires[$1] = where[4];
     };
 
     END {
-        print "multigraph redis_commands";
+        print "multigraph redis_commands_"port;
         print "commands.value " commands;
         print "hits.value " hits;
         print "misses.value " misses;
 
-        print "multigraph redis_dbs";
+        print "multigraph redis_dbs_"port;
         for (i in dbskeys)
             print i "keys.value "    dbskeys[i]
             print i "expires.value " dbsexpires[i];
     };
 '
-

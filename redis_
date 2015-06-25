@@ -197,6 +197,8 @@ if [ "$1" = "config" ]; then
             print i "keys.label " i " keys"
             print i "keys.type GAUGE"
             print i "keys.min 0"
+
+        for (i in dbsexpires)
             print i "expires.label " i " keys with TTL"
             print i "expires.type GAUGE"
             print i "expires.min 0";
@@ -278,8 +280,11 @@ redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
         print "misses.value " misses;
 
         print "multigraph redis_dbs_"port;
+
         for (i in dbskeys)
-            print i "keys.value "    dbskeys[i]
+            print i "keys.value "    dbskeys[i];
+
+        for (i in dbsexpires)
             print i "expires.value " dbsexpires[i];
     };
 '

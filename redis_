@@ -60,8 +60,8 @@ if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
     redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
-    /^rdb_changes_since_last_save:/ {
-        print "multigraph rdb_redis_changes_since_last_save_"port;
+    /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
+        print "multigraph redis_changes_since_last_save_"port;
         print "graph_title Redis changes since last save Port: "port ;
         print "graph_info Number of write operations since last SAVE or BGSAVE";
         print "graph_category redis";
@@ -210,8 +210,8 @@ fi
 
 redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
-   /^rdb_changes_since_last_save:/ {
-        print "multigraph rdb_redis_changes_since_last_save_"port;
+   /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
+        print "multigraph redis_changes_since_last_save_"port;
         print "changes.value " $2 ;
     };
 

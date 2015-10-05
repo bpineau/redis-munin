@@ -60,8 +60,8 @@ if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
     redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
-    /^changes_since_last_save:/ {
-        print "multigraph redis_changes_since_last_save_"port;
+    /^rdb_changes_since_last_save:/ {
+        print "multigraph rdb_redis_changes_since_last_save_"port;
         print "graph_title Redis changes since last save Port: "port ;
         print "graph_info Number of write operations since last SAVE or BGSAVE";
         print "graph_category redis";
@@ -197,6 +197,8 @@ if [ "$1" = "config" ]; then
             print i "keys.label " i " keys"
             print i "keys.type GAUGE"
             print i "keys.min 0"
+
+        for (i in dbsexpires)
             print i "expires.label " i " keys with TTL"
             print i "expires.type GAUGE"
             print i "expires.min 0";
@@ -208,8 +210,8 @@ fi
 
 redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
-   /^changes_since_last_save:/ {
-        print "multigraph redis_changes_since_last_save_"port;
+   /^rdb_changes_since_last_save:/ {
+        print "multigraph rdb_redis_changes_since_last_save_"port;
         print "changes.value " $2 ;
     };
 
@@ -278,8 +280,11 @@ redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
         print "misses.value " misses;
 
         print "multigraph redis_dbs_"port;
+
         for (i in dbskeys)
-            print i "keys.value "    dbskeys[i]
+            print i "keys.value "    dbskeys[i];
+
+        for (i in dbsexpires)
             print i "expires.value " dbsexpires[i];
     };
 '

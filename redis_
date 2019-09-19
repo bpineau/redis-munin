@@ -106,6 +106,7 @@ if [ "$1" = "config" ]; then
         print "graph_info Memory allocated by Redis";
         print "graph_args --base 1024 -l 0";
         print "memory.label memory";
+        print "maxmemory.label maxmemory";
         print "memory.info Amount of mem used by Redis";
         print "memory.type GAUGE";
         print "memory.min 0";
@@ -221,8 +222,11 @@ redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
     };
 
     /^used_memory:/ {
-        print "multigraph redis_memory_"port;
-        print "memory.value " $2 ;
+        used_memory=$2;
+    };
+
+    /^maxmemory:/ {
+        max_memory=$2;
     };
 
     /^connected_clients:/ {
@@ -286,5 +290,10 @@ redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
         for (i in dbsexpires)
             print i "expires.value " dbsexpires[i];
+
+        # for memory monitoring
+        print "multigraph redis_memory_"port;
+        print "memory.value " used_memory;
+        print "maxmemory.value " max_memory;
     };
 '

@@ -6,7 +6,7 @@
 #%# capabilities=autoconf suggest
 
 ip_socket=$(echo $0 | awk -F_ '{ print $2 }')
-if [ $ip_socket = "socket" ]; then
+if [ "$ip_socket" = "socket" ]; then
 tmp_var=$(echo $0 | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')
 port_path=$(echo "/${tmp_var}" | sed 's,/$,,')
 else
@@ -45,7 +45,7 @@ if [ "$1" = "autoconf" ]; then
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
+    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path} | sed -e s/"[- hp]*"//g
     exit 0
 fi
 

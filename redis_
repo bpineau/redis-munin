@@ -5,6 +5,9 @@
 #%# family=auto
 #%# capabilities=autoconf suggest
 
+# location of redis-cli - defaults to redis-cli found in $PATH
+redis_cli=${redis_cli:-redis-cli}
+
 ip_socket=$(echo $0 | awk -F_ '{ print $2 }')
 if [[ $ip_socket = "socket" ]]; then
 tmp_var=$(echo $0 | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')
@@ -39,13 +42,13 @@ else
 fi
 
 if [ "$1" = "autoconf" ]; then
-    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo yes && exit 0
+    $redis_cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo yes && exit 0
     echo no
     exit 0
 fi
 
 if [ "$1" = "suggest" ]; then
-    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
+    $redis_cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
     exit 0
 fi
 
@@ -58,7 +61,7 @@ fi
 
 if [ "$1" = "config" ]; then
     # Expose all possibles graphes according to server's capabilities
-    redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
+    $redis_cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
     /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;
@@ -209,7 +212,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
+$redis_cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
 
    /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;

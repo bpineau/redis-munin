@@ -41,6 +41,11 @@ env.password secret-password
 
 and/or
 
+[redis_*]
+env.REDISCLI_AUTH password1234
+
+and/or
+
 [redis_remoteserverip_remoteserverport]
 env.password another-secret-password
 
@@ -48,3 +53,9 @@ and/or
 
 [redis_socket_socketpath]
 env.password another-secret-password
+
+If redis-cli is not in the default PATH, you can set the location of the
+redis-cli binary in the config file ala /etc/munin/plugin-conf.d/redis:
+
+[redis_*]
+env.redis_cli /opt/rh/rh-redis5/root/usr/bin/redis-cli

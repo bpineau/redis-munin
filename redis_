@@ -34,6 +34,8 @@ fi
 # add the ability to set a password in a respective config file
 if [ -z "$password" ]; then
     passwd='' # no password was configured
+elif [ ! -z "$user" ]; then
+    passwd="--user $user --pass $password"
 else
     passwd="-a $password"
 fi

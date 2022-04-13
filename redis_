@@ -195,12 +195,14 @@ if [ "$1" = "config" ]; then
         print "graph_info Number of keys per dbs";
 
         for (i in dbskeys)
-            print i "keys.label " i " keys"
+            print i ""
+            print i "keys.label keys"
             print i "keys.type GAUGE"
             print i "keys.min 0"
 
         for (i in dbsexpires)
-            print i "expires.label " i " keys with TTL"
+            print i ""
+            print i "expires.label keys with TTL"
             print i "expires.type GAUGE"
             print i "expires.min 0";
     };

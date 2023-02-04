@@ -5,60 +5,59 @@
 #%# family=auto
 #%# capabilities=autoconf suggest
 
-ip_socket=$(echo $0 | awk -F_ '{ print $2 }')
-if [[ $ip_socket = "socket" ]]; then
-tmp_var=$(echo $0 | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')
-port_path=$(echo "/${tmp_var}" | sed 's,/$,,')
-else
-port_path=$(echo $0 | awk -F_ '{ print $3 }')
-fi
+redis_cli_args=()
 
-if [ "$ip_socket" = "socket" ]; then
-    ip_socket="-s";
+ip_socket="$(echo "${0}" | awk -F_ '{ print $2 }')"
+if [[ "${ip_socket}" == "socket" ]]; then
+  tmp_var="$(echo "${0}" | awk -F_ '{ s = ""; for (i = 3; i <= NF; i++) s = s $i "/"; print s }')"
+  port_path="$(echo "/${tmp_var}" | sed 's,/$,,')"
+  redis_cli_args+=( "-s" "${port_path}" )
 else
-    if [ -z $ip_socket ] ; then
-      ip_socket="-h 127.0.0.1"
-    else
-      ip_socket="-h $ip_socket"
-    fi
-fi
-
-if [ -z "$port_path" ]; then
-    port_path="-p 6379"
-elif [ "$ip_socket" = "-s" ]; then
-    port_path="$port_path"
-else
-    port_path="-p $port_path"
+  redis_cli_args+=( "-h" "${ip_socket}" )
+  port_path="$(echo "${0}" | awk -F_ '{ print $3 }')"
+  if [[ -n "${port_path}" ]]; then
+    redis_cli_args+=( "-p" "${port_path}" )
+  else
+    port_path="6379"
+  fi
 fi
 
 # add the ability to set a password in a respective config file
-if [ -z "$password" ]; then
-    passwd='' # no password was configured
-else
-    passwd="-a $password"
+if [[ -n "${password}" ]] && [[ -z "${username}" ]]; then
+  redis_cli_args+=( "-a" "${password}" )
+elif [[ -n "${password}" ]] && [[ -n "${username}" ]]; then
+  redis_cli_args+=( "--user" "${username}" )
+  redis_cli_args+=( "--pass" "${password}" )
 fi
 
-if [ "$1" = "autoconf" ]; then
-    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo yes && exit 0
-    echo no
-    exit 0
+# tls options
+tls_opts=( "tls" "sni" "cacert" "cacertdir" "cert" "key" )
+for tls_opt in "${tls_opts[@]}"; do
+  if [[ -n "${!tls_opt+x}" ]]; then
+    if [[ "${tls_opt}" == "tls" ]]; then
+      redis_cli_args+=( "--${tls_opt}" )
+    else
+      redis_cli_args+=( "--${tls_opt}" "${!tls_opt}")
+    fi
+  fi
+done
+
+if [[ "${1}" == "autoconf" ]]; then
+  redis-cli "${redis_cli_args[@]}" info >/dev/null 2>&1 && echo yes && exit 0
+  echo no
+  exit 0
 fi
 
-if [ "$1" = "suggest" ]; then
-    redis-cli $ip_socket $port_path $passwd info >/dev/null 2>&1 && echo ${ip_socket}_${port_path}
-    exit 0
+if [[ "${1}" = "suggest" ]]; then
+  redis-cli "${redis_cli_args[@]}" info >/dev/null 2>&1 && echo "${ip_socket}_${port_path}"
+  exit 0
 fi
 
-if [ "$ip_socket" = "-s" ]; then
-    tmp_muninport=$(echo "$port_path" | tr '/' '_')
-    muninport=$(echo "${tmp_muninport:1}" | tr '.' '_')
-else
-    muninport=$(echo "$port_path" | awk '{ print $2 }')
-fi
+munin_port="${port_path//[\/.]/_}"
 
-if [ "$1" = "config" ]; then
-    # Expose all possibles graphes according to server's capabilities
-    redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
+if [[ "${1}" == "config" ]]; then
+    # Expose all possibles graphs according to server's capabilities
+    redis-cli "${redis_cli_args[@]}" info | awk -v "port=${munin_port##*(_)}" -F: '
 
     /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;
@@ -209,7 +208,7 @@ if [ "$1" = "config" ]; then
     exit $?
 fi
 
-redis-cli $ip_socket $port_path $passwd info | awk -v port=${muninport} -F: '
+redis-cli "${redis_cli_args[@]}" info | awk -v "port=${munin_port}" -F: '
 
    /^changes_since_last_save:|^rdb_changes_since_last_save:/ {
         print "multigraph redis_changes_since_last_save_"port;
